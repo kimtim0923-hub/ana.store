@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>내 가게 무료 진단 리포트</title>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #1e293b;
+    --text-light: #64748b;
+    --border: #e2e8f0;
+    --success: #10b981;
+    --cpa-bg: #fffbeb;
+    --cpa-border: #f59e0b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+  }
+
+  h1 {
+    font-size: 22px;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: var(--text-light);
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  select, input, textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 16px;
+    background: var(--card);
+    color: var(--text);
+    -webkit-appearance: none;
+  }
+
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+  textarea { resize: vertical; min-height: 80px; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+  .row { display: flex; gap: 12px; }
+  .row .form-group { flex: 1; }
+
+  .btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s;
+  }
+  .btn:hover { background: var(--primary-dark); }
+  .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+  /* 로딩 */
+  .loading { display: none; text-align: center; padding: 40px 0; }
+  .loading.active { display: block; }
+  .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: var(--text-light); font-size: 14px; transition: opacity 0.3s; }
+
+  /* 리포트 */
+  .report { display: none; background: var(--card); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 24px; }
+  .report.active { display: block; }
+  .report h3 { font-size: 16px; color: var(--primary); margin: 20px 0 8px; }
+  .report h3:first-child { margin-top: 0; }
+  .report p, .report li { font-size: 15px; color: var(--text); }
+  .source-link { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; font-weight: 500; }
+  .source-link:hover { color: var(--primary-dark); }
+
+  /* CPA 배너 */
+  .cpa-banner {
+    display: none;
+    background: var(--cpa-bg);
+    border: 1px solid var(--cpa-border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 16px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+  .cpa-banner.visible { display: block; opacity: 1; }
+  .cpa-banner p { font-size: 14px; color: #92400e; margin-bottom: 10px; font-weight: 500; }
+  .cpa-link {
+    display: inline-block;
+    padding: 10px 24px;
+    background: var(--cpa-border);
+    color: #fff;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 14px;
+    transition: background 0.2s;
+  }
+  .cpa-link:hover { background: #d97706; }
+
+  .reset-btn {
+    display: none;
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: var(--text-light);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 12px;
+  }
+  .reset-btn.active { display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>내 가게 무료 진단</h1>
+  <p class="subtitle">공공포털 실시간 데이터 기반 맞춤 리포트</p>
+
+  <form id="diagForm">
+    <div class="form-group">
+      <label for="businessType">업종</label>
+      <select id="businessType" required>
+        <option value="">선택하세요</option>
+        <option>편의점</option>
+        <option>카페·커피숍</option>
+        <option>음식점(한식)</option>
+        <option>음식점(중식·일식·양식)</option>
+        <option>치킨·분식·패스트푸드</option>
+        <option>미용실·네일샵</option>
+        <option>옷가게·잡화</option>
+        <option>학원·교습소</option>
+        <option>세탁소·수선</option>
+        <option>마트·슈퍼</option>
+        <option>약국</option>
+        <option>인테리어·건설</option>
+        <option>온라인쇼핑몰</option>
+        <option>기타</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <div class="form-group">
+        <label for="revenue">월 매출 (만원)</label>
+        <input type="number" id="revenue" placeholder="예: 800" required min="0">
+      </div>
+      <div class="form-group">
+        <label for="years">영업 연수</label>
+        <input type="number" id="years" placeholder="예: 3" required min="0">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="employees">직원 수 (본인 포함)</label>
+      <input type="number" id="employees" placeholder="예: 1" required min="1">
+    </div>
+
+    <div class="form-group">
+      <label for="concern">주요 고민</label>
+      <textarea id="concern" placeholder="예: 임대료 부담, 카드 수수료가 너무 높음" required></textarea>
+    </div>
+
+    <button type="submit" class="btn" id="submitBtn">내 가게 진단받기</button>
+  </form>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p class="loading-text" id="loadingText">공공포털 오늘 데이터 확인 중...</p>
+  </div>
+
+  <div class="report" id="report">
+    <div id="reportContent"></div>
+  </div>
+
+  <div class="cpa-banner" id="cpaBanner">
+    <p>정책자금 낮은 금리 지금 확인 (3분이면 끝)</p>
+    <a href="#" class="cpa-link" id="cpaLink" target="_blank" rel="noopener">내 가게 대출 금리, 무료로 비교해보기 &rarr;</a>
+  </div>
+
+  <button class="reset-btn" id="resetBtn">다시 진단받기</button>
+</div>
+
+<script>
+const API_BASE = window.location.origin;
+
+const form = document.getElementById('diagForm');
+const submitBtn = document.getElementById('submitBtn');
+const loading = document.getElementById('loading');
+const loadingText = document.getElementById('loadingText');
+const report = document.getElementById('report');
+const reportContent = document.getElementById('reportContent');
+const cpaBanner = document.getElementById('cpaBanner');
+const cpaLink = document.getElementById('cpaLink');
+const resetBtn = document.getElementById('resetBtn');
+
+const LOADING_MSGS = [
+  '공공포털 오늘 데이터 확인 중...',
+  '내 가게에 맞는 지원금 찾는 중...',
+  '리포트 작성 중...'
+];
+
+function showLoading() {
+  form.style.display = 'none';
+  loading.classList.add('active');
+  let i = 0;
+  loadingText.textContent = LOADING_MSGS[0];
+  return setInterval(() => {
+    i = Math.min(i + 1, LOADING_MSGS.length - 1);
+    loadingText.textContent = LOADING_MSGS[i];
+  }, 1500);
+}
+
+function hideLoading(timer) {
+  clearInterval(timer);
+  loading.classList.remove('active');
+}
+
+function markdownToHTML(md) {
+  let html = md
+    .replace(/### (.+)/g, '<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="source-link">$1</a>')
+    .replace(/\n- /g, '\n<li>')
+    .replace(/\n\n/g, '</p><p>');
+  html = '<p>' + html + '</p>';
+  html = html.replace(/<p><h3>/g, '<h3>').replace(/<\/h3><\/p>/g, '</h3>');
+  html = html.replace(/<p><li>/g, '<ul><li>').replace(/<\/li><\/p>/g, '</li></ul>');
+  return html;
+}
+
+async function loadCpaLinks() {
+  try {
+    const res = await fetch(API_BASE + '/api/cpa-links');
+    const data = await res.json();
+    if (data.loan) cpaLink.href = data.loan;
+  } catch {}
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  submitBtn.disabled = true;
+
+  const payload = {
+    business_type: document.getElementById('businessType').value,
+    monthly_revenue: document.getElementById('revenue').value,
+    years_open: document.getElementById('years').value,
+    employees: document.getElementById('employees').value,
+    main_concern: document.getElementById('concern').value
+  };
+
+  const timer = showLoading();
+
+  try {
+    const res = await fetch(API_BASE + '/api/diagnose', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    hideLoading(timer);
+    report.classList.add('active');
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6);
+        if (data === '[DONE]') break;
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.text) {
+            fullText += parsed.text;
+            reportContent.innerHTML = markdownToHTML(fullText);
+            report.scrollIntoView({ behavior: 'smooth', block: 'end' });
+          }
+        } catch {}
+      }
+    }
+
+    // CPA 배너 0.8초 후 페이드인
+    setTimeout(() => {
+      cpaBanner.style.display = 'block';
+      requestAnimationFrame(() => cpaBanner.classList.add('visible'));
+    }, 800);
+
+    resetBtn.classList.add('active');
+
+  } catch (err) {
+    hideLoading(timer);
+    reportContent.innerHTML = '<p style="color:#ef4444">오류가 발생했습니다. 잠시 후 다시 시도해주세요.</p>';
+    report.classList.add('active');
+    resetBtn.classList.add('active');
+  }
+
+  submitBtn.disabled = false;
+});
+
+resetBtn.addEventListener('click', () => {
+  report.classList.remove('active');
+  cpaBanner.classList.remove('visible');
+  cpaBanner.style.display = 'none';
+  resetBtn.classList.remove('active');
+  reportContent.innerHTML = '';
+  form.style.display = 'block';
+  form.reset();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+loadCpaLinks();
+</script>
+</body>
+</html>
