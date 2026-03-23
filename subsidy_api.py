@@ -1,9 +1,16 @@
 import httpx
 import os
-from datetime import datetime
+import re
 
 BIZINFO_API_URL = "https://www.bizinfo.go.kr/uss/rss/bizinfoApi.do"
 BIZINFO_API_KEY = os.getenv("BIZINFO_API_KEY", "")
+
+
+def strip_html(text: str) -> str:
+    """HTML 태그 제거하고 깔끔한 텍스트 반환."""
+    clean = re.sub(r"<[^>]+>", "", text or "")
+    clean = re.sub(r"\s+", " ", clean).strip()
+    return clean[:200] if clean else ""
 
 # 업종 → 기업마당 분야코드 + 해시태그 매핑
 BUSINESS_HASHTAGS = {
@@ -54,14 +61,15 @@ async def fetch_subsidies(business_type: str) -> list[dict]:
         results = []
         for item in items:
             results.append({
-                "title": item.get("title", ""),
-                "agency": item.get("jrsdInsttNm", item.get("author", "")),
-                "description": item.get("bsnsSumryCn", item.get("description", "")),
-                "url": item.get("link", ""),
+                "title": item.get("pblancNm", ""),
+                "agency": item.get("jrsdInsttNm", ""),
+                "executor": item.get("excInsttNm", ""),
+                "description": strip_html(item.get("bsnsSumryCn", "")),
+                "url": item.get("pblancUrl", ""),
                 "period": item.get("reqstBeginEndDe", ""),
                 "target": item.get("trgetNm", ""),
-                "category": item.get("pldirSportRealmLclasCodeNm", item.get("lcategory", "")),
-                "tags": item.get("hashTags", ""),
+                "category": item.get("pldirSportRealmLclasCodeNm", ""),
+                "contact": item.get("refrncNm", ""),
             })
 
         return results
